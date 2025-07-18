@@ -27,4 +27,48 @@ custom_field_keys = [
 ]
 
 def get_deal_data(deal_id):
-    url = f"{BASE_URL}/deals/{deal_i
+    url = f"{BASE_URL}/deals/{deal_id}?api_token={API_TOKEN}"
+    response = requests.get(url)
+    if response.status_code != 200:
+        st.error(f"Fehler beim Abrufen des Deals: {response.status_code}")
+        return None
+    return response.json().get('data')
+
+st.title("Pipedrive Deal Teilnehmer auslesen")
+
+deal_id = st.text_input("Bitte Deal-ID eingeben:")
+
+if deal_id:
+    with st.spinner("Lade Deal-Daten..."):
+        deal_data = get_deal_data(deal_id)
+
+    if deal_data:
+        teilnehmer_list = []
+
+        for i, field_key in enumerate(custom_field_keys, start=1):
+            teilnehmer_info = deal_data.get(field_key)
+            if teilnehmer_info and isinstance(teilnehmer_info, dict):
+                name = teilnehmer_info.get('name', '')
+                emails = teilnehmer_info.get('email', [])
+                email = ''
+                for e in emails:
+                    if e.get('value'):
+                        email = e['value']
+                        break
+                organisation = ''
+                org_info = teilnehmer_info.get('org_id')
+                if org_info and isinstance(org_info, dict):
+                    organisation = org_info.get('name', '')
+            else:
+                name = ''
+                email = ''
+                organisation = ''
+
+            teilnehmer_list.append({
+                'Teilnehmer': f'Teilnehmer {i}',
+                'Name': name,
+                'E-Mail': email,
+                'Organisation': organisation
+            })
+
+        df = pd.DataF
